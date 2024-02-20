@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"strconv"
 )
 
 type Repository interface {
@@ -17,9 +18,9 @@ type Repository interface {
 	DeleteEmployee(id string) error
 	ListEmployeeByCompanyId(companyId int) ([]models.Employee, error)
 	ListEmployeeByDepartment(departmentName string) ([]models.Employee, error)
-	GetDepartmentById(phone, name string) (string, error)
-
-	//не хватает метода изменения? пункт 5 написать
+	UpdateEmployee(employee models.Employee, departmentId string) error
+	GetDepartmentId(phone, name string) (string, error)
+	GetEmployeeId(id string) (string, error)
 }
 
 //создаем конструктор и добавляем в нем подключение к базе
@@ -45,28 +46,6 @@ func ConnectDb() (*sql.DB, error) {
 
 	defer db.Close()
 	return db, nil
-}
-
-func (e Employee) GetDepartmentById(phone, name string) (string, error) {
-	querySelect := `SELECT id FROM department WHERE phone = ? AND name = ?`
-	rows, err := e.db.Query(querySelect, phone, name) // вопрос
-	if err != nil {
-		return "", err
-	}
-	defer rows.Close()
-
-	var departmenId string
-	for rows.Next() {
-		err := rows.Scan(&departmenId)
-		if err == sql.ErrNoRows {
-			return "", errors.New("Не существующий департамент")
-		}
-		if err != nil {
-			return "", err
-		}
-
-	}
-	return departmenId, nil
 }
 
 func (e Employee) AddEmployee(employee models.Employee, departmentId string) (string, error) {
@@ -171,7 +150,7 @@ func (e Employee) ListEmployeeByDepartment(departmentName string) ([]models.Empl
 	}
 	defer rows.Close()
 
-	employees := []models.Employee{} //не уверен что правильную структуру выбрал
+	employees := []models.Employee{}
 	for rows.Next() {
 		emp := models.Employee{}
 		err := rows.Scan(
@@ -194,4 +173,76 @@ func (e Employee) ListEmployeeByDepartment(departmentName string) ([]models.Empl
 		employees = append(employees, emp)
 	}
 	return []models.Employee{}, nil
+}
+
+func (e Employee) UpdateEmployee(employee models.Employee, departmentId string) error {
+
+	querySql := "UPDATE employee SET "
+	if employee.Name != "" {
+		querySql += "name = " + employee.Name //нужно ведь запятые после каждого поля добавить?
+	}
+	if employee.Surname != "" {
+		querySql += "surname = " + employee.Surname
+	}
+	if employee.Phone != "" {
+		querySql += "phone = " + employee.Phone
+	}
+	companyIdString := strconv.Itoa(employee.CompanyId) //предобразуем тип
+	if employee.CompanyId != 0 {
+		querySql += "company_id = " + companyIdString
+	}
+	if employee.Passport.Type != "" {
+		querySql += "passport_type = " + employee.Passport.Type
+	}
+	if employee.Passport.Number != "" {
+		querySql += "passport_number = " + employee.Passport.Number
+	}
+	if departmentId != "" {
+		querySql += "department_id = " + departmentId
+	}
+	querySql += " where id = ?"
+}
+
+func (e Employee) GetDepartmentId(phone, name string) (string, error) {
+	querySelect := `SELECT id FROM department WHERE phone = ? AND name = ?`
+	rows, err := e.db.Query(querySelect, phone, name) // вопрос
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+
+	var departmentId string
+	for rows.Next() {
+		err := rows.Scan(&departmentId)
+		if err == sql.ErrNoRows {
+			return "", errors.New("Не существующий департамент")
+		}
+		if err != nil {
+			return "", err
+		}
+
+	}
+	return departmentId, nil
+}
+func (e Employee) GetEmployeeId(id string) (string, error) {
+	/*querySelect := `SELECT id FROM department WHERE phone = ? AND name = ?`
+		rows, err := e.db.Query(querySelect, phone, name) // вопрос
+		if err != nil {
+			return "", err
+		}
+		defer rows.Close()
+
+		var departmenId string
+		for rows.Next() {
+			err := rows.Scan(&departmenId)
+			if err == sql.ErrNoRows {
+				return "", errors.New("Не существующий департамент")
+			}
+			if err != nil {
+				return "", err
+			}
+
+		}
+		return departmenId, nil
+	}*/
 }

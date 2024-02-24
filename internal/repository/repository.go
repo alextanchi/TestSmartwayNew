@@ -177,35 +177,42 @@ func (e Employee) ListEmployeeByDepartment(departmentName string) ([]models.Empl
 
 func (e Employee) UpdateEmployee(employee models.Employee, departmentId string) error {
 
-	querySql := "UPDATE employee SET "
+	querySql := "UPDATE employees SET "
 	if employee.Name != "" {
-		querySql += "name = " + employee.Name //нужно ведь запятые после каждого поля добавить?
+		querySql += "name = " + employee.Name + ","
 	}
 	if employee.Surname != "" {
-		querySql += "surname = " + employee.Surname
+		querySql += "surname = " + employee.Surname + ","
 	}
 	if employee.Phone != "" {
-		querySql += "phone = " + employee.Phone
+		querySql += "phone = " + employee.Phone + ","
 	}
 	companyIdString := strconv.Itoa(employee.CompanyId) //предобразуем тип
 	if employee.CompanyId != 0 {
-		querySql += "company_id = " + companyIdString
+		querySql += "company_id = " + companyIdString + ","
 	}
 	if employee.Passport.Type != "" {
-		querySql += "passport_type = " + employee.Passport.Type
+		querySql += "passport_type = " + employee.Passport.Type + ","
 	}
 	if employee.Passport.Number != "" {
-		querySql += "passport_number = " + employee.Passport.Number
+		querySql += "passport_number = " + employee.Passport.Number + ","
 	}
 	if departmentId != "" {
 		querySql += "department_id = " + departmentId
 	}
 	querySql += " where id = ?"
+
+	result, err := e.db.Exec(querySql, employee.ID)
+	if err != nil {
+		return err
+	}
+	fmt.Println(result.RowsAffected()) // количество обновленных строк
+	return nil
 }
 
 func (e Employee) GetDepartmentId(phone, name string) (string, error) {
 	querySelect := `SELECT id FROM department WHERE phone = ? AND name = ?`
-	rows, err := e.db.Query(querySelect, phone, name) // вопрос
+	rows, err := e.db.Query(querySelect, phone, name)
 	if err != nil {
 		return "", err
 	}
@@ -225,24 +232,22 @@ func (e Employee) GetDepartmentId(phone, name string) (string, error) {
 	return departmentId, nil
 }
 func (e Employee) GetEmployeeId(id string) (string, error) {
-	/*querySelect := `SELECT id FROM department WHERE phone = ? AND name = ?`
-		rows, err := e.db.Query(querySelect, phone, name) // вопрос
+	querySelect := `SELECT id FROM employees WHERE id = ?`
+	rows, err := e.db.Query(querySelect, id)
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err := rows.Scan(&id)
+		if err == sql.ErrNoRows {
+			return "", errors.New("Нет сотрудника с данным id")
+		}
 		if err != nil {
 			return "", err
 		}
-		defer rows.Close()
 
-		var departmenId string
-		for rows.Next() {
-			err := rows.Scan(&departmenId)
-			if err == sql.ErrNoRows {
-				return "", errors.New("Не существующий департамент")
-			}
-			if err != nil {
-				return "", err
-			}
-
-		}
-		return departmenId, nil
-	}*/
+	}
+	return id, nil
 }

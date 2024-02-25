@@ -19,11 +19,10 @@ type Repository interface {
 	ListEmployeeByCompanyId(companyId int) ([]models.Employee, error)
 	ListEmployeeByDepartment(departmentName string) ([]models.Employee, error)
 	UpdateEmployee(employee models.Employee, departmentId string) error
+
 	GetDepartmentId(phone, name string) (string, error)
 	GetEmployeeId(id string) (string, error)
 }
-
-//создаем конструктор и добавляем в нем подключение к базе
 
 type Employee struct {
 	db *sql.DB
@@ -36,6 +35,7 @@ func NewEmployee(db *sql.DB) Repository { //конструктор
 	}
 }
 
+// ConnectDb добавляем подключение к базе
 func ConnectDb() (*sql.DB, error) {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		"localhost", 54321, "postgres", "postgres1234", "employees")
@@ -131,18 +131,18 @@ func (e Employee) ListEmployeeByCompanyId(companyId int) ([]models.Employee, err
 }
 
 func (e Employee) ListEmployeeByDepartment(departmentName string) ([]models.Employee, error) {
-	querySql := "SELECT e.id, \n" +
-		"e.name, \n" +
-		"e.surname, \n" +
-		"e.phone, \n" +
-		"e.company_id, \n" +
-		"e.passport_type, \n" +
-		"e.passport_number, \n" +
-		"d.name, \n" +
-		"d.phone, \n" +
-		"FROM employees e \n" +
-		"JOIN department d ON e.id = d.employee_id, \n" +
-		"WHERE d.name = $1"
+	querySql := `SELECT e.id, 
+		e.name,  
+		e.surname, 
+		e.phone, 
+		e.company_id,
+		e.passport_type, 
+		e.passport_number, 
+		d.name, 
+		d.phone, 
+		FROM employees e 
+		JOIN department d ON e.id = d.employee_id,
+		WHERE d.name = $1"`
 
 	rows, err := e.db.Query(querySql, departmentName) // вопрос
 	if err != nil {
@@ -172,41 +172,42 @@ func (e Employee) ListEmployeeByDepartment(departmentName string) ([]models.Empl
 		}
 		employees = append(employees, emp)
 	}
-	return []models.Employee{}, nil
+	return employees, nil
 }
 
 func (e Employee) UpdateEmployee(employee models.Employee, departmentId string) error {
 
 	querySql := "UPDATE employees SET "
 	if employee.Name != "" {
-		querySql += "name = " + employee.Name + ","
+		querySql += "name = '" + employee.Name + "',"
 	}
 	if employee.Surname != "" {
-		querySql += "surname = " + employee.Surname + ","
+		querySql += "surname = '" + employee.Surname + "',"
 	}
 	if employee.Phone != "" {
-		querySql += "phone = " + employee.Phone + ","
+		querySql += "phone = '" + employee.Phone + "',"
 	}
-	companyIdString := strconv.Itoa(employee.CompanyId) //предобразуем тип
+	//предобразуем тип
+	companyIdString := strconv.Itoa(employee.CompanyId)
 	if employee.CompanyId != 0 {
 		querySql += "company_id = " + companyIdString + ","
 	}
 	if employee.Passport.Type != "" {
-		querySql += "passport_type = " + employee.Passport.Type + ","
+		querySql += "passport_type = '" + employee.Passport.Type + "',"
 	}
 	if employee.Passport.Number != "" {
-		querySql += "passport_number = " + employee.Passport.Number + ","
+		querySql += "passport_number = '" + employee.Passport.Number + "',"
 	}
 	if departmentId != "" {
-		querySql += "department_id = " + departmentId
+		querySql += "department_id = '" + departmentId + "'"
 	}
 	querySql += " where id = ?"
 
-	result, err := e.db.Exec(querySql, employee.ID)
+	_, err := e.db.Exec(querySql, employee.ID)
 	if err != nil {
 		return err
 	}
-	fmt.Println(result.RowsAffected()) // количество обновленных строк
+
 	return nil
 }
 

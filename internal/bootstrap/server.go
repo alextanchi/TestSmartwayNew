@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"TestSmartwayNew/internal/controller"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
 )
@@ -23,6 +24,19 @@ func NewServer(cnt controller.Controller) Server {
 		},
 		cnt: cnt,
 	}
+}
+
+// InitRoutes инициализируем все наши эндпоинты
+func (s Server) InitRoutes() *gin.Engine {
+	router := gin.New()
+	router.POST("/employee", s.cnt.AddEmployee)
+	router.DELETE("/employee", s.cnt.DeleteEmployee)
+	router.GET("/employee/list", s.cnt.ListEmployeeByCompanyId)
+	router.GET("/employee/list", s.cnt.ListEmployeeByDepartment)
+	router.PUT("/employee", s.cnt.UpdateEmployee)
+
+	return router
+
 }
 
 /*

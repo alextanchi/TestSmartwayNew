@@ -30,9 +30,9 @@ func NewServer(cnt controller.Controller) Server {
 func (s Server) InitRoutes() *gin.Engine {
 	router := gin.New()
 	router.POST("/employee", s.cnt.AddEmployee)
-	router.DELETE("/employee", s.cnt.DeleteEmployee)
+	router.DELETE("/employee/:id", s.cnt.DeleteEmployee)
 	router.GET("/employee/list", s.cnt.ListEmployeeByCompanyId)
-	router.GET("/employee/list", s.cnt.ListEmployeeByDepartment)
+	router.GET("/employee/list/:department", s.cnt.ListEmployeeByDepartment)
 	router.PUT("/employee", s.cnt.UpdateEmployee)
 
 	return router

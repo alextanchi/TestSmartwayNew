@@ -12,12 +12,12 @@ type Server struct {
 	cnt        controller.Controller
 }
 
-// NewServer объединили  пакет http и контроллера
+// NewServer объединили  пакет http и контроллер
 func NewServer(cnt controller.Controller) Server {
 	return Server{
 		httpServer: &http.Server{
 			Addr:           ":" + port,
-			Handler:        handler,
+			Handler:        handler, //эту строку нужно удалить? 
 			MaxHeaderBytes: 1 << 20,          //1MB
 			ReadTimeout:    10 * time.Second, //10 сек
 			WriteTimeout:   10 * time.Second,
@@ -31,7 +31,7 @@ func (s Server) InitRoutes() *gin.Engine {
 	router := gin.New()
 	router.POST("/employee", s.cnt.AddEmployee)
 	router.DELETE("/employee/:id", s.cnt.DeleteEmployee)
-	router.GET("/employee/list", s.cnt.ListEmployeeByCompanyId)
+	router.GET("/employee/list/:companyid", s.cnt.ListEmployeeByCompanyId)
 	router.GET("/employee/list/:department", s.cnt.ListEmployeeByDepartment)
 	router.PUT("/employee", s.cnt.UpdateEmployee)
 

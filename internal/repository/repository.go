@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	_ "github.com/lib/pq"
+	"log"
 	"strconv"
 )
 
@@ -14,7 +16,7 @@ type Repository interface {
 	//аргументы для методов выбираем в соответствии с ТЗ
 	//(например DeleteEmployee удаляет сотрудника по айди => в качестве аргумента будет принимать айди int)
 
-	AddEmployee(employee models.Employee, departmentId string) (string, error) //принимаем всю структуру employee в качестве аргумента
+	AddEmployee(employee models.Employee, departmentId string) (string, error)
 	DeleteEmployee(id string) error
 	ListEmployeeByCompanyId(companyId int) ([]models.Employee, error)
 	ListEmployeeByDepartment(departmentName string) ([]models.Employee, error)
@@ -38,20 +40,22 @@ func NewEmployee(db *sql.DB) Repository { //конструктор
 // ConnectDb добавляем подключение к базе
 func ConnectDb() (*sql.DB, error) {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		"localhost", 54321, "postgres", "postgres1234", "employees")
+		"localhost", 5432, "postgres", "password", "employee")
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		return nil, err
 	}
+	log.Println("подключились к БД")
 
-	defer db.Close()
+	//defer db.Close()
 	return db, nil
 }
 
 func (e Employee) AddEmployee(employee models.Employee, departmentId string) (string, error) {
 
 	id := uuid.NewString()
-	querySql := `INSERT INTO empolyees
+
+	querySql := `INSERT INTO employees
     (id,
      name, 
      surname,
@@ -60,7 +64,7 @@ func (e Employee) AddEmployee(employee models.Employee, departmentId string) (st
      passport_type,
      passport_number,
      department_id
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, &8)`
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
 
 	_, err := e.db.Exec(querySql,
 		id,
@@ -85,6 +89,7 @@ func (e Employee) DeleteEmployee(id string) error {
 }
 
 func (e Employee) ListEmployeeByCompanyId(companyId int) ([]models.Employee, error) {
+
 	querySql := `SELECT 
     	e.id,
 		e.name, 
@@ -94,19 +99,22 @@ func (e Employee) ListEmployeeByCompanyId(companyId int) ([]models.Employee, err
 		e.passport_type, 
 		e.passport_number,
 		d.name, 
-		d.phone, 
-		FROM employees e, 
-		JOIN department d ON e.id = d.employee_id, 
+		d.phone 
+		FROM employees e 
+		JOIN department d ON e.department_id = d.id
 		WHERE e.company_id = $1`
 
-	rows, err := e.db.Query(querySql, companyId) // вопрос
+	rows, err := e.db.Query(querySql, companyId)
 	if err != nil {
+
 		return nil, err
 	}
+
 	defer rows.Close()
 
 	employees := make([]models.Employee, 0)
 	for rows.Next() {
+
 		emp := models.Employee{}
 		err = rows.Scan(
 			&emp.ID,
@@ -122,11 +130,14 @@ func (e Employee) ListEmployeeByCompanyId(companyId int) ([]models.Employee, err
 		if err == sql.ErrNoRows {
 			return []models.Employee{}, nil
 		}
+
 		if err != nil {
+
 			return nil, err
 		}
 		employees = append(employees, emp)
 	}
+
 	return employees, nil
 }
 
@@ -139,9 +150,9 @@ func (e Employee) ListEmployeeByDepartment(departmentName string) ([]models.Empl
 		e.passport_type, 
 		e.passport_number, 
 		d.name, 
-		d.phone, 
+		d.phone 
 		FROM employees e 
-		JOIN department d ON e.id = d.employee_id,
+		JOIN department d ON e.department_id = d.id
 		WHERE d.name = $1"`
 
 	rows, err := e.db.Query(querySql, departmentName) // вопрос
@@ -212,7 +223,7 @@ func (e Employee) UpdateEmployee(employee models.Employee, departmentId string) 
 }
 
 func (e Employee) GetDepartmentId(phone, name string) (string, error) {
-	querySelect := `SELECT id FROM department WHERE phone = ? AND name = ?`
+	querySelect := `SELECT id FROM department WHERE phone = $1 AND name = $2`
 	rows, err := e.db.Query(querySelect, phone, name)
 	if err != nil {
 		return "", err
@@ -233,7 +244,7 @@ func (e Employee) GetDepartmentId(phone, name string) (string, error) {
 	return departmentId, nil
 }
 func (e Employee) GetEmployeeId(id string) (string, error) {
-	querySelect := `SELECT id FROM employees WHERE id = ?`
+	querySelect := `SELECT id FROM employees WHERE id = $1`
 	rows, err := e.db.Query(querySelect, id)
 	if err != nil {
 		return "", err

@@ -117,7 +117,7 @@ func (e Employee) ListEmployeeByCompanyId(companyId int) ([]models.Employee, err
 
 		emp := models.Employee{}
 		err = rows.Scan(
-			&emp.ID,
+			&emp.Id,
 			&emp.Name,
 			&emp.Surname,
 			&emp.Phone,
@@ -165,7 +165,7 @@ func (e Employee) ListEmployeeByDepartment(departmentName string) ([]models.Empl
 	for rows.Next() {
 		emp := models.Employee{}
 		err := rows.Scan(
-			&emp.ID,
+			&emp.Id,
 			&emp.Name,
 			&emp.Surname,
 			&emp.Phone,
@@ -214,7 +214,7 @@ func (e Employee) UpdateEmployee(employee models.Employee, departmentId string) 
 	}
 	querySql += " where id = ?"
 
-	_, err := e.db.Exec(querySql, employee.ID)
+	_, err := e.db.Exec(querySql, employee.Id)
 	if err != nil {
 		return err
 	}

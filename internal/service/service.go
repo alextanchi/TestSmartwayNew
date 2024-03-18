@@ -43,7 +43,8 @@ func (s EmployeeService) DeleteEmployee(id string) error {
 }
 func (s EmployeeService) ListEmployeeByCompanyId(companyId int) ([]models.Employee, error) {
 
-	return s.storage.ListEmployeeByCompanyId(companyId)
+	employees, err := s.storage.ListEmployeeByCompanyId(companyId)
+	return employees, err
 
 }
 

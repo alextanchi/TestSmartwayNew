@@ -8,9 +8,10 @@ CREATE TABLE employees
     passport_type   varchar NOT NULL,
     passport_number varchar NOT NULL,
     department_id   uuid    NOT NULL,
-    CONSTRAINT employees_pkey PRIMARY KEY (id) /* устанавливаем ограничение на столбец id,
-                                                   это первичный ключ который будет уникальным*/
-    /*прописать форейн кей*/
+    CONSTRAINT employees_pkey PRIMARY KEY (id),/* устанавливаем ограничение на столбец id,                                           это первичный ключ который будет уникальным*/
+        CONSTRAINT department_fk
+        FOREIGN KEY (department_id)
+        REFERENCES department(id)
 
 );
 
